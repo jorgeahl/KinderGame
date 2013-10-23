@@ -5,6 +5,9 @@ La aplicación se trata de cuatro juegos infantiles, uno de español, y tres de 
 Collaborators
 ==========
 [Roxana Gonzalez](http://github.com/rogonzalez)
+
 [Ricardo Vilches](http://github.com/Rikr226)
+
 [Roberto Arce Corretjer](http://github.com/racorretjer)
+
 [Jonathan Velez](http://github.com/jvelez)
