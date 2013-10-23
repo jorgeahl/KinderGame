@@ -5,6 +5,7 @@ La aplicación se trata de cuatro juegos infantiles, uno de español, y tres de 
 Requirements
 ==========
 La aplicación se subdivide en dos entidades, el juego y la aplicación. Por ende para poder correr el juego debe instalarse PyGame y para correr la aplicacion debe instalarse Django. Vale recalcar que ambos se conectan por medio de una base de datos.
+
 [PyGame](http://www.pygame.org/download.shtml)
 
 [Django](https://www.djangoproject.com/download/) 
