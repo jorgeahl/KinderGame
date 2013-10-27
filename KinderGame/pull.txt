@@ -1,0 +1,13 @@
+avion 1 0
+iguana 3 2
+testing6 3 2
+testing2 3 2
+testing7 3 2
+elefante 2 1
+testing8 3 2
+testing5 3 2
+testing4 3 2
+testing 2 2
+oso 4 3
+uvas 5 4
+testing3 3 2

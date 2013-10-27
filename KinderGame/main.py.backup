@@ -1,0 +1,513 @@
+import pygame
+import math
+import socket
+import os
+import random
+
+# Import the android module. If we can't import it, set it to None - this
+# lets us test it, and check to see if we want android-specific behavior.
+try:
+	import android
+except ImportError:
+	android = None
+
+random.seed()
+
+'''
+#os.system("php assets/con.php")
+HOST = '136.145.187.30'    # The remote host
+PORT = 50007              # The same port as used by the server
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.connect((HOST, PORT))
+s.send('Hello, world. fuck yeah! FROM THE FUCKING TABLET')
+data = s.recv(1024)
+print data
+s.close()'''
+
+#screen width and screen height
+SW = 800
+SH = 400
+
+#input array
+keyUp = 0
+keyDown = 1
+keyLeft = 2
+keyRight = 3
+keySpace = 4
+keyEnter = 5
+keyE = 6
+MX = 0
+MY = 1
+MLC = 2
+MRC = 3
+
+Keys = [ False, False, False, False, False, False, False ]
+Mouse = [ 0, 0, False, False ]
+
+#game states
+stateSplashScreen = 0
+stateTitleScreen = 1
+stateChooseKid = 2
+stateGamePlay = 3
+stateGameOver = 4
+GameState = stateTitleScreen
+
+# Event constant.
+TIMEREVENT = pygame.USEREVENT
+
+# The FPS the game runs at.
+FPS = 10
+
+# Color constants.
+BLACK = (0,0,0)
+WHITE = (255,255,255)
+RED = (255,0,0)
+GREEN = (0, 255, 0)
+BLUE = (0,0,255)
+YELLOW = (255,255,0)
+ORANGE = (255,128,0)
+PINK = (255,0,255)
+PURPLE = (128,0,255)
+
+#initialize pygame
+pygame.init()
+
+#set the window title text
+pygame.display.set_caption("Kinder Game")
+
+# Set the screen size.
+screen = pygame.display.set_mode((SW, SH)) # pygame.NOFRAME)
+
+#pygame.mouse.set_visible(0) 
+
+# Map the back button to the escape key.
+if android:
+	android.init()
+	android.map_key(android.KEYCODE_BACK, pygame.K_LEFT)
+	android.map_key(android.KEYCODE_HOME, pygame.K_RIGHT)
+	android.map_key(android.KEYCODE_E, pygame.K_e)
+
+# Use a timer to control FPS.
+pygame.time.set_timer(TIMEREVENT, 1000 / FPS)
+
+#point in rectangle intersection functions
+def PointRectIntersection(px,py,rx,ry,rw,rh):
+		return (px>rx and px<rx+rw and py>ry and py<ry+rh)
+		
+def PointRectIntersection2(px,py,r):
+		return (px>r[0] and px<r[0]+r[2] and py>r[1] and py<r[1]+r[3])
+		
+		
+
+#start class Button ===================================================#
+class Button:
+	def __init__(self,fname,pos):
+		self.image = pygame.image.load(fname)
+		self.rect = self.image.get_rect()
+		self.rect.center = pos
+		self.clicked = False
+		
+	def HandleInput(self):
+		if Mouse[MLC] == True or Mouse[MRC] == True:
+			if PointRectIntersection2(Mouse[MX],Mouse[MY],self.rect):
+				self.clicked = True
+				if android:
+					android.vibrate(0.04);
+				Mouse[MLC] = Mouse[MRC] = False
+		else:
+			self.clicked = False
+		
+	def IsClicked(self):
+		return self.clicked
+		
+	def SetImage(self,image):
+		self.image = image
+
+	def Draw(self,DisplaySurface):
+		DisplaySurface.blit(self.image,self.rect)
+#end class Button =====================================================#
+
+#start class Font =====================================================#
+class Font:
+	
+	def __init__(self,fname,size,color):
+		self.font = pygame.font.Font(fname,size)
+		self.fname = fname
+		self.size = size
+		self.color = color
+		
+	def Set(self,fname,size,color):
+		self.font = pygame.font.Font(fname,size)
+		self.fname = fname
+		self.size = size
+		self.color = color
+	
+	def SetFont(self,fname):
+		self.fname = fname
+		self.font = pygame.font.Font(fname,self.size)
+		
+	def SetSize(self,size):
+		self.fname = fname
+		self.font = pygame.font.Font(self.fname,size)
+		
+	def SetColor(self,color):
+		self.color = color
+		
+	def Draw(self,DisplaySurface, text, x, y):
+		surf = self.font.render(text, True, self.color)
+		t,t2,w,h = surf.get_rect()
+		DisplaySurface.blit(surf,(x,y,w,h))
+		
+	def Draw2(self,DisplaySurface, text, x, y, color):
+		surf = self.font.render(text, True, color)
+		surf.set_alpha(None)
+		surf.set_alpha(100)
+		t,t2,w,h = surf.get_rect()
+		DisplaySurface.blit(surf,(x,y,w,h))
+		
+	def Draw3(self,DisplaySurface, text, x, y, color):
+		semiTransparent = self.font.render(text, True, color)
+		newSurf = pygame.Surface(self.font.size(text))
+		newSurf.blit(semiTransparent,(0,0))
+		newSurf.set_alpha(color[3])
+		DisplaySurface.blit(newSurf, (x,y))
+		
+#end class Font =======================================================#	
+
+#start class TextBox ==================================================#
+class TextBox:
+	def __init__(self,fname,rect):
+		self.clicked = False
+		self.edit = False
+		self.string = ""
+		self.font = Font()
+		selg.rect = rect
+		
+	def HandleInput(self):
+		if self.edit == True:
+			#if key pressed:
+				#manipulate string
+			pass
+		else:
+			if Mouse[MLC] == True or Mouse[MRC] == True:
+				if PointRectIntersection2(Mouse[MX],Mouse[MY],self.rect):
+					self.clicked = True
+					self.edit = True
+					if android:
+						android.vibrate(0.04);
+				Mouse[MLC] = Mouse[MRC] = False
+			else:
+				self.clicked = False
+		
+	def IsClicked(self):
+		return self.clicked
+		
+	def IsEditing(self):
+		return self.edit
+		
+	def TextChanged(self):
+		return self.modified
+		
+	def SetImage(self,font):
+		self.font = font
+
+	def Draw(self,DisplaySurface):
+		DisplaySurface.blit(self.image,self.rect)
+#end class TextBox ====================================================#
+		
+
+#start class Background ===============================================#
+class Background:
+	def __init__(self,fname,speed):
+		self.speed = speed
+		self.image = pygame.image.load(fname)
+		self.imageRect = self.image.get_rect()
+		self.x, self.y, self.w, self.h = self.imageRect
+		
+	def Update(self):
+		self.x = self.x + self.speed
+		if self.x > SW:
+			self.x = -self.w
+		if self.x + self.w < 0:
+			self.x = SW
+			
+	def Draw(self, DisplaySurface):
+		self.imageRect.center = (self.x+self.w/2,self.y+self.h/2)
+		DisplaySurface.blit(self.image,self.imageRect)
+		
+		self.imageRect.center = (self.x+self.w*1.5,self.y+self.h/2)
+		DisplaySurface.blit(self.image,self.imageRect)
+		
+		self.imageRect.center = (self.x-self.w/2,self.y+self.h/2)
+		DisplaySurface.blit(self.image,self.imageRect)
+#end cass Background ==================================================#
+
+
+#class GameObject 
+class GameObject:	
+	def __init__(self):
+		self.x = 0
+		self.y = 0
+		self.w = 32
+		self.h = 32
+		self.angle = 0
+		self.speed = 4
+		self.image = pygame.image.load("assets/start.png")
+		self.imageRect = self.image.get_rect()
+		self.x, self.y, self.w, self.h = self.imageRect
+		
+	def SetPosition(self,pos):
+		self.x, self.y = pos
+		
+	def HandleInput(self):
+		if Keys[keyUp] == True:
+			self.MoveUp()
+		elif Keys[keyDown] == True:
+			self.MoveDown()
+		if Keys[keyLeft] == True:
+			self.MoveLeft()
+		elif Keys[keyRight] == True:
+			self.MoveRight()
+			
+	def Update(self):
+		if self.x < 0:
+			self.x = 0
+		if self.x > SW - self.w:
+			self.x = SW - self.w
+		if self.y < 0:
+			self.y = 0
+		if self.y > SH - self.h:
+			self.y = SH - self.h
+		
+	def MoveLeft(self):
+		self.x = self.x - self.speed
+		
+	def MoveRight(self):
+		self.x = self.x + self.speed
+		
+	def MoveUp(self):
+		self.y = self.y - self.speed
+		
+	def MoveDown(self):
+		self.y = self.y + self.speed
+
+	def Draw(self,DisplaySurface):
+		pygame.draw.rect(DisplaySurface, GREEN, (self.x,self.y,self.w,self.h))
+		#self.imageRect.center = (self.x+self.w/2,self.y+self.h/2)
+		DisplaySurface.blit(self.image, (self.x, self.y) ) #self.imageRect)
+		
+#end class GameObject =================================================#
+				
+
+#start class SplashScreen =============================================#
+class SplashScreen:
+	def __init__(self):
+		self.image = pygame.image.load("assets/start.png").convert()
+		self.rect = self.image.get_rect()
+		self.alpha = 0
+		self.flag = 0
+		self.val = 1
+		
+	def HandleInput(self):
+		if Mouse[MLC] == True or Mouse[MRC] == True:
+			self.val = -2
+			
+	def Update(self):	
+		self.alpha = self.alpha + 2*self.val
+		if self.alpha >= 255:
+			self.val = -1	
+		if self.val < 0 and self.alpha <= 0:
+			global GameState
+			GameState = stateTitleScreen
+			Keys[keyEnter] = False
+			Keys[keySpace] = False
+			
+	def Draw(self, DisplaySurface):
+		DisplaySurface.fill(WHITE)
+		self.rect.center = (SW/2, SH/2)
+		self.image.set_alpha(self.alpha)
+		DisplaySurface.blit(self.image,self.rect)	
+#end cass SplashScreen =================================================#
+
+#start class TitleScreen ==============================================#
+class TitleScreen:
+	def __init__(self):
+		self.image = pygame.image.load("assets/titleScreen.png").convert()
+		self.start = pygame.image.load("assets/start.png")
+		self.button = Button("assets/start.png",(SW/2 + 125, SH*0.75))
+		self.val = 0
+		
+	def HandleInput(self):
+		self.button.HandleInput()
+	
+	def Update(self):
+		self.val = (self.val + 1) % 37
+		if self.button.IsClicked():
+			global GameState
+			GameState = stateGamePlay
+			
+	def Draw(self, DisplaySurface):
+		DisplaySurface.blit(self.image,(0,0))
+		if self.val > 5:
+			self.button.Draw(DisplaySurface)
+#end cass TitleScreen =================================================#
+
+#start class LoginScreen ==============================================#
+class LoginScreen:
+	def __init__(self):
+		self.image = pygame.image.load("assets/titleScreen.png").convert()
+		self.start = pygame.image.load("assets/start.png").convert()
+		self.button = Button("assets/start.png",(SW/2 + 125, SH*0.75))
+		self.val = 0
+		
+	def HandleInput(self):
+		self.button.HandleInput()
+	
+	def Update(self):
+		self.val = (self.val + 1) % 37
+		if self.button.IsClicked():
+			global GameState
+			GameState = stateGamePlay
+			
+	def Draw(self, DisplaySurface):
+		DisplaySurface.blit(self.image,(0,0))
+		if self.val > 5:
+			self.button.Draw(DisplaySurface)
+#end cass LoginScreen =================================================#
+
+#start class GamePlay =================================================#
+class GamePlay:
+	def __init__(self):
+		self.currentImage = 0
+		self.images = [] #load game images here
+		self.background = pygame.image.load("assets/gamebg.png")
+		self.buttons = []
+		for i in range(1,6):
+			self.buttons.append(Button("assets/but%s.png" % str(i),(i*120+30,325)))
+			self.images.append(pygame.image.load("assets/image%s.png" % str(i-1)))
+			
+		self.string = "test"
+		self.font = Font("assets/MORTEM.ttf",30,GREEN)
+			
+	def HandleInput(self):
+		for b in self.buttons:
+			b.HandleInput()
+			if b.IsClicked() == True:
+				if android:
+					android.show_keyboard()
+				self.currentImage = self.buttons.index(b)
+				print self.currentImage
+			if Keys[keyE] == True:
+				self.string = self.string + "E"
+				Keys[keyE] == False
+				
+		
+	def Update(self):
+		pass
+		
+	def Draw(self, DisplaySurface):
+		DisplaySurface.blit(self.background, (0,0))
+		DisplaySurface.blit(self.images[self.currentImage], (275,90))
+		for b in self.buttons:
+			b.Draw(DisplaySurface)
+		self.font.Draw(DisplaySurface,self.string,10,10)
+		
+#end cass GamePlay ====================================================#
+
+#start class GameOver =================================================#
+class GameOver:
+	def __init__(self):
+		self.image = pygame.image.load("assets/start.png").convert()
+		
+	def HandleInput(self):
+		if Keys[keyEnter] == True or Keys[keySpace] == True:
+			global GameState
+			GameState = stateTitleScreen
+			Keys[keyEnter] = False
+			Keys[keySpace] = False
+			
+	def Update(self):
+		return
+			
+	def Draw(self, DisplaySurface):
+		DisplaySurface.blit(self.image,(0,0))
+		
+#end cass GameOver ====================================================#
+
+
+
+#declare game components
+screens = [ 0, TitleScreen(), 0, GamePlay(), 0 ]
+
+#start main game loop =================================================#
+while True:
+	ev = pygame.event.wait()
+
+	# Android-specific:
+	if android:
+		if android.check_pause():
+			android.wait_for_resume()
+	
+	
+
+	# Draw the screen based on the timer ==============================#
+	if ev.type == TIMEREVENT:
+		screen.fill(BLACK)
+		screens[GameState].Draw(screen)
+		pygame.display.flip()
+	# end Drawing stuff ===============================================#
+
+	#start Recieving input ============================================#
+	elif ev.type == pygame.QUIT:
+		break
+	elif ev.type == pygame.KEYDOWN:
+		if ev.key == pygame.K_UP:
+			Keys[keyUp] = True
+		if ev.key == pygame.K_DOWN:
+			Keys[keyDown] = True
+		if ev.key == pygame.K_LEFT:
+			Keys[keyLeft] = True
+		if ev.key == pygame.K_RIGHT:
+			Keys[keyRight] = True
+		if ev.key == pygame.K_SPACE:
+			Keys[keySpace] = True
+		if ev.key == pygame.K_RETURN:
+			Keys[keyEnter] = True
+		if ev.key == pygame.K_e:
+			Keys[keyE] = True
+		if ev.key == pygame.K_ESCAPE:
+			break
+	elif ev.type == pygame.KEYUP:
+		if ev.key == pygame.K_UP:
+			Keys[keyUp] = False
+		if ev.key == pygame.K_DOWN:
+			Keys[keyDown] = False
+		if ev.key == pygame.K_LEFT:
+			Keys[keyLeft] = False
+		if ev.key == pygame.K_RIGHT:
+			Keys[keyRight] = False
+		if ev.key == pygame.K_SPACE:
+			Keys[keySpace] = False
+		if ev.key == pygame.K_RETURN:
+			Keys[keyEnter] = False
+		if ev.key == pygame.K_e:
+			Keys[keyE] = False
+	elif ev.type == pygame.MOUSEMOTION:
+		Mouse[MX], Mouse[MY] = ev.pos
+	elif ev.type == pygame.MOUSEBUTTONUP:
+		Mouse[MLC] = Mouse[MRC] = False
+	elif ev.type == pygame.MOUSEBUTTONDOWN:
+		Mouse[MLC] = Mouse[MRC] = True
+		Mouse[MX], Mouse[MY] = ev.pos
+		
+	#end Recieving input ==============================================#
+			
+	#start Handling input and updating stuff ==========================#
+	screens[GameState].HandleInput(ev)
+	screens[GameState].Update()
+	#player.HandleInput()
+	#player.Update()
+	#background.Update()
+	#end Handling input and updating stuff ============================#
+
+#end main game loop ===================================================#
